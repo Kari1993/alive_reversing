@@ -290,17 +290,6 @@ int CC SND_Reload_DSound(SoundEntry* pSoundEntry, unsigned int sampleOffset, uns
     return 0;
 }
 
-EXPORT void CC SND_InitVolumeTable_4EEF60()
-{
-#define max(a,b) (((a) > (b)) ? (a) : (b))
-#define min(a,b) (((a) < (b)) ? (a) : (b))
-
-    for (int i = 0; i < 127; i++)
-    {
-        sVolumeTable_BBBD38[i] = static_cast<int>(min(max(log2f((i + 1) / 128.0f) / log2f(2.0f) * 1000.0f, -10000), 0));
-    }
-    sVolumeTable_BBBD38[0] = -10000;
-}
 
 EXPORT void CC SND_Init_WaveFormatEx_4EEA00(WAVEFORMATEX *pWaveFormat, int sampleRate, unsigned __int8 bitsPerSample, int isStereo)
 {

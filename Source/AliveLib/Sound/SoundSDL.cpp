@@ -373,16 +373,6 @@ int AE_SDL_Voice::Duplicate(AE_SDL_Voice ** dupePtr)
 
 // Exoddus Functions:
 
-
-EXPORT void CC SND_InitVolumeTable_4EEF60()
-{
-    for (int i = 0; i < 127; i++)
-    {
-        sVolumeTable_BBBD38[i] = i;
-    }
-    sVolumeTable_BBBD38[0] = 0;
-}
-
 int CC SND_Reload_SDL(SoundEntry* pSoundEntry, unsigned int sampleOffset, unsigned int size)
 {
     const DWORD alignedOffset = sampleOffset * pSoundEntry->field_1D_blockAlign;

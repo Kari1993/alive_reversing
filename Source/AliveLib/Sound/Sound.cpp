@@ -705,3 +705,15 @@ EXPORT void CC SND_Restart_4CB0E0()
     Start_Sounds_For_Objects_In_Near_Cameras_4CBB60();
 }
 
+
+EXPORT void CC SND_InitVolumeTable_4EEF60()
+{
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+
+    for (int i = 0; i < 127; i++)
+    {
+        sVolumeTable_BBBD38[i] = static_cast<int>(min(max(log2f((i + 1) / 128.0f) / log2f(2.0f) * 1000.0f, -10000), 0));
+    }
+    sVolumeTable_BBBD38[0] = -10000;
+}
