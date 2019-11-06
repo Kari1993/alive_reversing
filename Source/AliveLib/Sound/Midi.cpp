@@ -1979,29 +1979,6 @@ EXPORT int CC MIDI_PlayMidiNote_4FCB30(int vabId, int program, int note, int lef
                         MIDI_Wait_4FCE50();
                     }
 
-#if USE_SDL2_SOUND
-                    signed int pan = ((pVagIter->field_11_pad) * (20000 / 127)) - 10000;
-
-                    if (panLeft > panRight)
-                    {
-                        pan -= static_cast<signed int>((1.0f - (panRight / static_cast<float>(panLeft))) * 10000);
-                    }
-                    else if (panRight > panLeft)
-                    {
-                        pan += static_cast<signed int>((1.0f - (panLeft / static_cast<float>(panRight))) * 10000);
-                    }
-
-                    pan = std::min(std::max(pan, -10000), 10000);
-
-                    SND_Play_SDL(
-                        &sSoundEntryTable16_BE6160.table[vabId][pVagIter->field_10_vag],
-                        ((volume * std::max(leftVol2, rightVol2) * vagVol * sGlobalVolumeLevel_left_BD1CDC) >> 21),
-                        pan,
-                        pChannel->field_10_float, // freq
-                        pChannel,
-                        playFlags,
-                        pVagIter->field_E_priority);
-#else
                     SND_PlayEx_4EF740(
                         &sSoundEntryTable16_BE6160.table[vabId][pVagIter->field_10_vag],
                         panLeft,
@@ -2010,7 +1987,6 @@ EXPORT int CC MIDI_PlayMidiNote_4FCB30(int vabId, int program, int note, int lef
                         pChannel,
                         playFlags,
                         pVagIter->field_E_priority);
-#endif
 
                     if (program == 4 || program == 5 || program == 8 || program == 23 || program == 24 || program == 25)
                     {
