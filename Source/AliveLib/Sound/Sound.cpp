@@ -24,6 +24,12 @@ ALIVE_ARY(1, 0xBBBAB8, SoundBuffer, 32, sSoundBuffers_BBBAB8, {});
 ALIVE_ARY(1, 0xBBBD38, int, 127, sVolumeTable_BBBD38, {});
 ALIVE_ARY(1, 0xBBBF38, SoundEntry*, 256, sSoundSamples_BBBF38, {});
 
+#if USE_SDL2_SOUND
+ALIVE_VAR(1, 0xBBC344, SDLSound*, sDSound_BBC344, nullptr);
+#else
+ALIVE_VAR(1, 0xBBC344, LPDIRECTSOUND, sDSound_BBC344, nullptr);
+#endif
+
 const DWORD k127_dword_575158 = 127;
 
 EXPORT signed int CC SND_CreateDS_4EEAA0(unsigned int sampleRate, int bitsPerSample, int isStereo)
@@ -107,6 +113,34 @@ EXPORT int CC SND_Load_4EF680(SoundEntry* pSnd, const void* pWaveData, int waveD
     }
     return SND_Reload_4EF1C0(pSnd, 0, pSnd->field_8_pSoundBuffer, pSnd->field_C_buffer_size_bytes / pSnd->field_1D_blockAlign);
 }
+
+
+EXPORT signed int CC SND_Free_4EFA30(SoundEntry* pSnd)
+{
+    if (!sDSound_BBC344)
+    {
+        return -1;
+    }
+
+    pSnd->field_10 = 0;
+
+    if (pSnd->field_8_pSoundBuffer)
+    {
+        mem_free_4F4EA0(pSnd->field_8_pSoundBuffer);
+        pSnd->field_8_pSoundBuffer = 0;
+    }
+
+    if (pSnd->field_4_pDSoundBuffer)
+    {
+        pSnd->field_4_pDSoundBuffer->Release();
+        pSnd->field_4_pDSoundBuffer = nullptr;
+    }
+
+    sSoundSamples_BBBF38[pSnd->field_0_tableIdx] = nullptr;
+    sLoadedSoundsCount_BBC394--;
+    return 0;
+}
+
 
 EXPORT int CC SND_Buffer_Set_Frequency_4EFC90(int idx, float hzChangeFreq)
 {
@@ -517,3 +551,4 @@ EXPORT void CC SND_Restart_4CB0E0()
     BackgroundMusic::Play_4CB030();
     Start_Sounds_For_Objects_In_Near_Cameras_4CBB60();
 }
+

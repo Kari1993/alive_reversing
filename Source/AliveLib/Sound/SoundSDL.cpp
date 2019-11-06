@@ -400,29 +400,6 @@ EXPORT void CC SND_SsQuit_4EFD50()
     return;
 }
 
-EXPORT signed int CC SND_Free_4EFA30(SoundEntry* pSnd)
-{
-    pSnd->field_4_pDSoundBuffer->mState.bLoop = false;
-
-    pSnd->field_10 = 0;
-
-    if (pSnd->field_8_pSoundBuffer)
-    {
-        mem_free_4F4EA0(pSnd->field_8_pSoundBuffer);
-        pSnd->field_8_pSoundBuffer = 0;
-    }
-
-    if (pSnd->field_4_pDSoundBuffer)
-    {
-        pSnd->field_4_pDSoundBuffer->Release();
-        pSnd->field_4_pDSoundBuffer = nullptr;
-    }
-
-    sSoundSamples_BBBF38[pSnd->field_0_tableIdx] = nullptr;
-    sLoadedSoundsCount_BBC394--;
-    return 0;
-}
-
 EXPORT void CC SND_InitVolumeTable_4EEF60()
 {
     for (int i = 0; i < 127; i++)
@@ -565,10 +542,6 @@ signed int CC SND_CreateDS_SDL(unsigned int /*sampleRate*/, int /*bitsPerSample*
     return 0;
 }
 
-EXPORT char CC SND_CreatePrimarySoundBuffer_4EEEC0(int /*sampleRate*/, int /*bitsPerSample*/, int /*isStereo*/)
-{
-    return 0;
-}
 
 int SND_Play_SDL(const SoundEntry* pSnd, int volume, signed int pan, float freq, MIDI_Struct1* pMidiStru, int playFlags, int priority)
 {

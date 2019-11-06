@@ -17,6 +17,14 @@ extern bool gAudioStereo;
 using AE_BUFFERTYPE = struct IDirectSoundBuffer;
 #endif
 
+#if USE_SDL2_SOUND
+class SDLSound;
+ALIVE_VAR_EXTERN(SDLSound*, sDSound_BBC344);
+#else
+ALIVE_VAR_EXTERN(LPDIRECTSOUND, sDSound_BBC344);
+#endif
+
+
 struct SoundEntry
 {
     int field_0_tableIdx;
@@ -54,9 +62,7 @@ EXPORT signed int CC SND_New_4EEFF0(SoundEntry *pSnd, int sampleLength, int samp
 EXPORT int CC SND_Load_4EF680(SoundEntry* pSnd, const void* pWaveData, int waveDataLen);
 EXPORT signed int CC SND_Free_4EFA30(SoundEntry* pSnd);
 EXPORT void CC SND_Restart_4CB0E0();
-EXPORT int CC SND_SetPrimarySoundBufferFormat_4EE990(int sampleRate, int bitsPerSample, unsigned __int8 isStereo);
 EXPORT void CC SND_InitVolumeTable_4EEF60();
-EXPORT char CC SND_CreatePrimarySoundBuffer_4EEEC0(int sampleRate, int bitsPerSample, int isStereo);
 EXPORT signed int CC SND_Renew_4EEDD0(SoundEntry *pSnd);
 EXPORT int CC SND_Get_Buffer_Status_4EE8F0(int idx);
 EXPORT signed int CC SND_Stop_Sample_At_Idx_4EFA90(int idx);

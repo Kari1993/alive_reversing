@@ -10,7 +10,6 @@
 #include <mmeapi.h>
 #include <timeapi.h>
 
-ALIVE_VAR(1, 0xBBC344, LPDIRECTSOUND, sDSound_BBC344, nullptr);
 ALIVE_VAR(1, 0xbbc388, LPDIRECTSOUNDBUFFER, sPrimarySoundBuffer_BBC388, 0);
 
 ALIVE_VAR(1, 0xbbc340, int, sPrimarySoundBufferSampleRate_BBC340, 0);
@@ -58,6 +57,47 @@ EXPORT char * CC SND_HR_Err_To_String_4EEC70(HRESULT hr)
     }
 
     return "";
+}
+
+EXPORT int CC SND_SetPrimarySoundBufferFormat_4EE990(int sampleRate, int bitsPerSample, unsigned __int8 isStereo)
+{
+    WAVEFORMATEX pWaveFormat = {};
+
+    if (!sPrimarySoundBuffer_BBC388)
+    {
+        return -2;
+    }
+
+    pWaveFormat.wFormatTag = 0;
+    pWaveFormat.nSamplesPerSec = 0;
+    pWaveFormat.nAvgBytesPerSec = 0;
+    pWaveFormat.nBlockAlign = 0;
+    pWaveFormat.cbSize = 0;
+    SND_Init_WaveFormatEx_4EEA00(&pWaveFormat, sampleRate, static_cast<unsigned char>(bitsPerSample), isStereo);
+    return -(sPrimarySoundBuffer_BBC388->SetFormat(&pWaveFormat) != 0);
+}
+
+EXPORT char CC SND_CreatePrimarySoundBuffer_4EEEC0(int sampleRate, int bitsPerSample, int isStereo)
+{
+    DSBUFFERDESC bufferDesc = {};
+    bufferDesc.dwSize = sizeof(DSBUFFERDESC);
+    bufferDesc.dwBufferBytes = 0;
+    bufferDesc.dwFlags = 1;
+    bufferDesc.dwReserved = 0;
+    bufferDesc.lpwfxFormat = 0;
+
+    if (FAILED(sDSound_BBC344->CreateSoundBuffer(&bufferDesc, &sPrimarySoundBuffer_BBC388, nullptr)))
+    {
+        return -1;
+    }
+
+    if (SUCCEEDED(sPrimarySoundBuffer_BBC388->Play(0, 0, 1)))
+    {
+        return SND_SetPrimarySoundBufferFormat_4EE990(sampleRate, bitsPerSample, static_cast<unsigned char>(isStereo)) != 0 ? 0xFD : 0;
+    }
+
+    sPrimarySoundBuffer_BBC388->Release();
+    return -2;
 }
 
 signed int CC SND_CreateDS_DSound(unsigned int sampleRate, int bitsPerSample, int isStereo)
@@ -281,32 +321,6 @@ EXPORT void CC SND_SsQuit_4EFD50()
     }
 }
 
-EXPORT signed int CC SND_Free_4EFA30(SoundEntry* pSnd)
-{
-    if (!sDSound_BBC344)
-    {
-        return -1;
-    }
-
-    pSnd->field_10 = 0;
-
-    if (pSnd->field_8_pSoundBuffer)
-    {
-        mem_free_4F4EA0(pSnd->field_8_pSoundBuffer);
-        pSnd->field_8_pSoundBuffer = 0;
-    }
-
-    if (pSnd->field_4_pDSoundBuffer)
-    {
-        pSnd->field_4_pDSoundBuffer->Release();
-        pSnd->field_4_pDSoundBuffer = nullptr;
-    }
-
-    sSoundSamples_BBBF38[pSnd->field_0_tableIdx] = nullptr;
-    sLoadedSoundsCount_BBC394--;
-    return 0;
-}
-
 EXPORT void CC SND_InitVolumeTable_4EEF60()
 {
 #define max(a,b) (((a) > (b)) ? (a) : (b))
@@ -317,29 +331,6 @@ EXPORT void CC SND_InitVolumeTable_4EEF60()
         sVolumeTable_BBBD38[i] = static_cast<int>(min(max(log2f((i + 1) / 128.0f) / log2f(2.0f) * 1000.0f, -10000), 0));
     }
     sVolumeTable_BBBD38[0] = -10000;
-}
-
-EXPORT char CC SND_CreatePrimarySoundBuffer_4EEEC0(int sampleRate, int bitsPerSample, int isStereo)
-{
-    DSBUFFERDESC bufferDesc = {};
-    bufferDesc.dwSize = sizeof(DSBUFFERDESC);
-    bufferDesc.dwBufferBytes = 0;
-    bufferDesc.dwFlags = 1;
-    bufferDesc.dwReserved = 0;
-    bufferDesc.lpwfxFormat = 0;
-
-    if (FAILED(sDSound_BBC344->CreateSoundBuffer(&bufferDesc, &sPrimarySoundBuffer_BBC388, nullptr)))
-    {
-        return -1;
-    }
-
-    if (SUCCEEDED(sPrimarySoundBuffer_BBC388->Play(0, 0, 1)))
-    {
-        return SND_SetPrimarySoundBufferFormat_4EE990(sampleRate, bitsPerSample, static_cast<unsigned char>(isStereo)) != 0 ? 0xFD : 0;
-    }
-
-    sPrimarySoundBuffer_BBC388->Release();
-    return -2;
 }
 
 EXPORT void CC SND_Init_WaveFormatEx_4EEA00(WAVEFORMATEX *pWaveFormat, int sampleRate, unsigned __int8 bitsPerSample, int isStereo)
@@ -353,24 +344,6 @@ EXPORT void CC SND_Init_WaveFormatEx_4EEA00(WAVEFORMATEX *pWaveFormat, int sampl
     pWaveFormat->wFormatTag = WAVE_FORMAT_PCM;
     pWaveFormat->nBlockAlign = bitsPerSample * ((isStereo != 0) + 1) / 8;
     pWaveFormat->nAvgBytesPerSec = sampleRate * pWaveFormat->nBlockAlign;
-}
-
-EXPORT int CC SND_SetPrimarySoundBufferFormat_4EE990(int sampleRate, int bitsPerSample, unsigned __int8 isStereo)
-{
-    WAVEFORMATEX pWaveFormat = {};
-
-    if (!sPrimarySoundBuffer_BBC388)
-    {
-        return -2;
-    }
-
-    pWaveFormat.wFormatTag = 0;
-    pWaveFormat.nSamplesPerSec = 0;
-    pWaveFormat.nAvgBytesPerSec = 0;
-    pWaveFormat.nBlockAlign = 0;
-    pWaveFormat.cbSize = 0;
-    SND_Init_WaveFormatEx_4EEA00(&pWaveFormat, sampleRate, static_cast<unsigned char>(bitsPerSample), isStereo);
-    return -(sPrimarySoundBuffer_BBC388->SetFormat(&pWaveFormat) != 0);
 }
 
 EXPORT signed int CC SND_Renew_4EEDD0(SoundEntry *pSnd)

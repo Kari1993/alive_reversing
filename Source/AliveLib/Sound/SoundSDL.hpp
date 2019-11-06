@@ -50,6 +50,12 @@ enum AudioFilterMode
     Linear = 1,
 };
 
+class SDLSound
+{
+public:
+
+};
+
 class AE_SDL_Voice
 {
 
