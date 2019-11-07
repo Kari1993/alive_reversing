@@ -116,8 +116,7 @@ public:
 };
 
 signed int CC SND_CreateDS_SDL(unsigned int /*sampleRate*/, int /*bitsPerSample*/, int /*isStereo*/);
-int CC SND_Reload_SDL(SoundEntry* pSoundEntry, unsigned int sampleOffset, unsigned int size);
-
+int CC SND_Clear_SDL(SoundEntry* pSoundEntry, unsigned int sampleOffset, unsigned int size);
 EXPORT char * CC SND_HR_Err_To_String_4EEC70(long hr);
 
 

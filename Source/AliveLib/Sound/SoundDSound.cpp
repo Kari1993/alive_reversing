@@ -197,7 +197,7 @@ signed int CC SND_CreateDS_DSound(unsigned int sampleRate, int bitsPerSample, in
                         if (sSoundSamples_BBBF38[i])
                         {
                             SND_Renew_4EEDD0(sSoundSamples_BBBF38[i]);
-                            SND_Reload_4EF1C0(sSoundSamples_BBBF38[i], 0, sSoundSamples_BBBF38[i]->field_8_pSoundBuffer, sSoundSamples_BBBF38[i]->field_C_buffer_size_bytes / (unsigned __int8)sSoundSamples_BBBF38[i]->field_1D_blockAlign);
+                            SND_LoadSamples_4EF1C0(sSoundSamples_BBBF38[i], 0, sSoundSamples_BBBF38[i]->field_8_pSoundBuffer, sSoundSamples_BBBF38[i]->field_C_buffer_size_bytes / (unsigned __int8)sSoundSamples_BBBF38[i]->field_1D_blockAlign);
                             if ((i + 1) == sLoadedSoundsCount_BBC394)
                                 break;
                         }
@@ -220,7 +220,7 @@ signed int CC SND_CreateDS_DSound(unsigned int sampleRate, int bitsPerSample, in
 }
 
 
-int CC SND_Reload_DSound(SoundEntry* pSoundEntry, unsigned int sampleOffset, unsigned int size)
+int CC SND_Clear_DSound(SoundEntry* pSoundEntry, unsigned int sampleOffset, unsigned int size)
 {
     if (!sDSound_BBC344)
     {
@@ -291,19 +291,6 @@ int CC SND_Reload_DSound(SoundEntry* pSoundEntry, unsigned int sampleOffset, uns
 }
 
 
-EXPORT void CC SND_Init_WaveFormatEx_4EEA00(WAVEFORMATEX *pWaveFormat, int sampleRate, unsigned __int8 bitsPerSample, int isStereo)
-{
-    pWaveFormat->nSamplesPerSec = 0;
-    pWaveFormat->nAvgBytesPerSec = 0;
-    pWaveFormat->cbSize = 0;
-    pWaveFormat->nSamplesPerSec = sampleRate;
-    pWaveFormat->nChannels = (isStereo != 0) + 1;
-    pWaveFormat->wBitsPerSample = bitsPerSample;
-    pWaveFormat->wFormatTag = WAVE_FORMAT_PCM;
-    pWaveFormat->nBlockAlign = bitsPerSample * ((isStereo != 0) + 1) / 8;
-    pWaveFormat->nAvgBytesPerSec = sampleRate * pWaveFormat->nBlockAlign;
-}
-
 EXPORT signed int CC SND_Renew_4EEDD0(SoundEntry *pSnd)
 {
     if (!sDSound_BBC344)
@@ -341,7 +328,7 @@ EXPORT signed int CC SND_Renew_4EEDD0(SoundEntry *pSnd)
     }
 }
 
-EXPORT signed int CC SND_Reload_4EF1C0(const SoundEntry* pSnd, DWORD sampleOffset, unsigned char* pSoundBuffer, unsigned int sampleCount)
+EXPORT signed int CC SND_LoadSamples_4EF1C0(const SoundEntry* pSnd, DWORD sampleOffset, unsigned char* pSoundBuffer, unsigned int sampleCount)
 {
     const int offsetBytes = sampleOffset * pSnd->field_1D_blockAlign;
     const unsigned int bufferSizeBytes = sampleCount * pSnd->field_1D_blockAlign;
@@ -357,7 +344,7 @@ EXPORT signed int CC SND_Reload_4EF1C0(const SoundEntry* pSnd, DWORD sampleOffse
     char * rightChannelBuffer;
     int rightChannelSize;
 
-    int lockHR = pSnd->field_4_pDSoundBuffer->Lock(offsetBytes, bufferSizeBytes, (LPVOID *)&leftChannelBuffer, (LPDWORD)&leftChannelSize, (LPVOID *)&rightChannelBuffer, (LPDWORD)&rightChannelSize, 0);
+    HRESULT lockHR = pSnd->field_4_pDSoundBuffer->Lock(offsetBytes, bufferSizeBytes, (LPVOID *)&leftChannelBuffer, (LPDWORD)&leftChannelSize, (LPVOID *)&rightChannelBuffer, (LPDWORD)&rightChannelSize, 0);
 
     if (lockHR == DSERR_BUFFERLOST)
     {
@@ -369,7 +356,7 @@ EXPORT signed int CC SND_Reload_4EF1C0(const SoundEntry* pSnd, DWORD sampleOffse
         lockHR = pSnd->field_4_pDSoundBuffer->Lock(offsetBytes, bufferSizeBytes, (LPVOID *)&leftChannelBuffer, (LPDWORD)&leftChannelSize, (LPVOID *)&rightChannelBuffer, (LPDWORD)&rightChannelSize, 0);
     }
 
-    if (lockHR)
+    if (FAILED(lockHR))
     {
         Error_PushErrorRecord_4F2920("C:\\abe2\\code\\POS\\SND.C", 662, -1, "SND_Reload(): Cannot lock the ds buffer");
         return -1;
@@ -403,84 +390,5 @@ EXPORT signed int CC SND_Reload_4EF1C0(const SoundEntry* pSnd, DWORD sampleOffse
     return 0;
 }
 
-EXPORT signed int CC SND_New_4EEFF0(SoundEntry *pSnd, int sampleLength, int sampleRate, int bitsPerSample, int isStereo)
-{
-    if (!sDSound_BBC344)
-    {
-        return -1;
-    }
-
-    if (sLoadedSoundsCount_BBC394 < 256)
-    {
-        WAVEFORMATEX waveFormatEx;
-        DSBUFFERDESC bufferDesc;
-
-        waveFormatEx.wFormatTag = 0;
-        waveFormatEx.nSamplesPerSec = 0;
-        waveFormatEx.nAvgBytesPerSec = 0;
-        waveFormatEx.nBlockAlign = 0;
-        waveFormatEx.cbSize = 0;
-        SND_Init_WaveFormatEx_4EEA00(&waveFormatEx, sampleRate, static_cast<unsigned char>(bitsPerSample), isStereo & 1);
-
-        const int sampleByteSize = sampleLength * waveFormatEx.nBlockAlign;
-        bufferDesc.dwReserved = 0;
-        bufferDesc.lpwfxFormat = &waveFormatEx;
-        pSnd->field_1D_blockAlign = static_cast<unsigned char>(waveFormatEx.nBlockAlign);
-        bufferDesc.dwSize = 20;
-        bufferDesc.dwBufferBytes = sampleByteSize;
-        bufferDesc.dwFlags = 82152;
-
-        const HRESULT sbHR = sDSound_BBC344->CreateSoundBuffer(&bufferDesc, &pSnd->field_4_pDSoundBuffer, 0);
-
-        if (sbHR)
-        {
-            Error_PushErrorRecord_4F2920("C:\\abe2\\code\\POS\\SND.C", 598, -1, "SND_New(): Cannot create ds sound buffer");
-            Error_PushErrorRecord_4F2920("C:\\abe2\\code\\POS\\SND.C", 599, -1, SND_HR_Err_To_String_4EEC70(sbHR));
-            return -1;
-        }
-        else
-        {
-            pSnd->field_10 = 0;
-            unsigned char * bufferData = static_cast<unsigned char *>(malloc_4F4E60(sampleByteSize));
-            pSnd->field_8_pSoundBuffer = bufferData;
-            if (bufferData)
-            {
-                pSnd->field_18_sampleRate = sampleRate;
-                pSnd->field_1C_bitsPerSample = static_cast<char>(bitsPerSample);
-                pSnd->field_C_buffer_size_bytes = sampleByteSize;
-                pSnd->field_14_buffer_size_bytes = sampleByteSize;
-                pSnd->field_20_isStereo = isStereo;
-
-                for (int i = 0; i < 256; i++)
-                {
-                    if (!sSoundSamples_BBBF38[i])
-                    {
-                        sSoundSamples_BBBF38[i] = pSnd;
-                        pSnd->field_0_tableIdx = i;
-                        sLoadedSoundsCount_BBC394++;
-                        return 0;
-                    }
-                }
-
-                return 0; // No free spaces left. Should never get here as all calls to Snd_NEW are checked before hand.
-            }
-            else
-            {
-                pSnd->field_4_pDSoundBuffer->Release();
-                Error_PushErrorRecord_4F2920(
-                    "C:\\abe2\\code\\POS\\SND.C",
-                    608,
-                    -1,
-                    "SND_New(): Cannot create original data sound buffer");
-                return -1;
-            }
-        }
-    }
-    else
-    {
-        Error_PushErrorRecord_4F2920("C:\\abe2\\code\\POS\\SND.C", 568, -1, "SND_New: out of samples");
-        return -1;
-    }
-}
 
 #endif

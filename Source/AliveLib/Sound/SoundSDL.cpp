@@ -373,7 +373,7 @@ int AE_SDL_Voice::Duplicate(AE_SDL_Voice ** dupePtr)
 
 // Exoddus Functions:
 
-int CC SND_Reload_SDL(SoundEntry* pSoundEntry, unsigned int sampleOffset, unsigned int size)
+int CC SND_Clear_SDL(SoundEntry* pSoundEntry, unsigned int sampleOffset, unsigned int size)
 {
     const DWORD alignedOffset = sampleOffset * pSoundEntry->field_1D_blockAlign;
     const DWORD alignedSize = size * pSoundEntry->field_1D_blockAlign;
@@ -384,67 +384,13 @@ int CC SND_Reload_SDL(SoundEntry* pSoundEntry, unsigned int sampleOffset, unsign
     return 0;
 }
 
-EXPORT signed int CC SND_Renew_4EEDD0(SoundEntry *pSnd)
-{
-    printf("SND_Renew_4EEDD0: %p\n", pSnd);
-    return 0; // TODO
-}
-
-EXPORT signed int CC SND_Reload_4EF1C0(const SoundEntry* pSnd, DWORD sampleOffset, unsigned char* pSoundBuffer, unsigned int sampleCount)
+// TODO: Proxy in sound.cpp
+EXPORT signed int CC SND_LoadSamples_4EF1C0(const SoundEntry* pSnd, DWORD sampleOffset, unsigned char* pSoundBuffer, unsigned int sampleCount)
 {
     const int offsetBytes = sampleOffset * pSnd->field_1D_blockAlign;
     const unsigned int bufferSizeBytes = sampleCount * pSnd->field_1D_blockAlign;
     memcpy(reinterpret_cast<Uint8*>(pSnd->field_4_pDSoundBuffer->GetBuffer()->data()) + offsetBytes, pSoundBuffer, bufferSizeBytes);
     return 0;
-}
-
-EXPORT signed int CC SND_New_4EEFF0(SoundEntry *pSnd, int sampleLength, int sampleRate, int bitsPerSample, int isStereo)
-{
-    if (sLoadedSoundsCount_BBC394 < 256)
-    {
-        pSnd->field_1D_blockAlign = static_cast<unsigned char>(bitsPerSample * ((isStereo != 0) + 1) / 8);
-        int sampleByteSize = sampleLength * pSnd->field_1D_blockAlign;
-
-        AE_SDL_Voice * pDSoundBuffer = new AE_SDL_Voice();
-        pDSoundBuffer->SetFrequency(sampleRate);
-        pDSoundBuffer->mState.iSampleCount = sampleByteSize / 2;
-        pDSoundBuffer->pBuffer = std::make_shared<std::vector<BYTE>>(std::vector<BYTE>(sampleByteSize));
-        pDSoundBuffer->mState.iBlockAlign = pSnd->field_1D_blockAlign;
-        pDSoundBuffer->mState.iChannels = (isStereo & 1) ? 2 : 1;
-        pSnd->field_4_pDSoundBuffer = pDSoundBuffer;
-
-        pSnd->field_10 = 0;
-        unsigned char * bufferData = static_cast<unsigned char *>(malloc_4F4E60(sampleByteSize));
-        pSnd->field_8_pSoundBuffer = bufferData;
-        if (bufferData)
-        {
-            pSnd->field_18_sampleRate = sampleRate;
-            pSnd->field_1C_bitsPerSample = static_cast<char>(bitsPerSample);
-            pSnd->field_C_buffer_size_bytes = sampleByteSize;
-            pSnd->field_14_buffer_size_bytes = sampleByteSize;
-            pSnd->field_20_isStereo = isStereo;
-
-            for (int i = 0; i < 256; i++)
-            {
-                if (!sSoundSamples_BBBF38[i])
-                {
-                    sSoundSamples_BBBF38[i] = pSnd;
-                    pSnd->field_0_tableIdx = i;
-                    sLoadedSoundsCount_BBC394++;
-                    return 0;
-                }
-            }
-
-            return 0; // No free spaces left. Should never get here as all calls to Snd_NEW are checked before hand.
-        }
-    }
-    else
-    {
-        Error_PushErrorRecord_4F2920("C:\\abe2\\code\\POS\\SND.C", 568, -1, "SND_New: out of samples");
-        return -1;
-    }
-
-    return -1;
 }
 
 signed int CC SND_CreateDS_SDL(unsigned int /*sampleRate*/, int /*bitsPerSample*/, int /*isStereo*/)
@@ -491,7 +437,7 @@ signed int CC SND_CreateDS_SDL(unsigned int /*sampleRate*/, int /*bitsPerSample*
                     if (sSoundSamples_BBBF38[i])
                     {
                         SND_Renew_4EEDD0(sSoundSamples_BBBF38[i]);
-                        SND_Reload_4EF1C0(sSoundSamples_BBBF38[i], 0, sSoundSamples_BBBF38[i]->field_8_pSoundBuffer, sSoundSamples_BBBF38[i]->field_C_buffer_size_bytes / (unsigned __int8)sSoundSamples_BBBF38[i]->field_1D_blockAlign);
+                        SND_LoadSamples_4EF1C0(sSoundSamples_BBBF38[i], 0, sSoundSamples_BBBF38[i]->field_8_pSoundBuffer, sSoundSamples_BBBF38[i]->field_C_buffer_size_bytes / (unsigned __int8)sSoundSamples_BBBF38[i]->field_1D_blockAlign);
                         if ((i + 1) == sLoadedSoundsCount_BBC394)
                             break;
                     }
