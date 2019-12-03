@@ -58,8 +58,8 @@ using AE_BUFFERTYPE = struct IDirectSoundBuffer;
 #endif
 
 #if USE_SDL2_SOUND
-class SDLSound;
-ALIVE_VAR_EXTERN(SDLSound*, sDSound_BBC344);
+class SDLSoundSystem;
+ALIVE_VAR_EXTERN(SDLSoundSystem*, sDSound_BBC344);
 #else
 ALIVE_VAR_EXTERN(LPDIRECTSOUND, sDSound_BBC344);
 #endif

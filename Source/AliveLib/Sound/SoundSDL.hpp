@@ -53,7 +53,7 @@ enum AudioFilterMode
     Linear = 1,
 };
 
-
+// An SDL implement of used IDirectSoundBuffer API's.
 class AE_SDL_Voice
 {
 
@@ -61,16 +61,18 @@ public:
     AE_SDL_Voice();
 
     int SetVolume(int volume);
-    int Play(int /*reserved*/, int /*priority*/, int flags);
+    int Play(int reserved, int priority, int flags);
     int Stop();
 
     int SetFrequency(int frequency);
     int SetCurrentPosition(int position);
-    int GetCurrentPosition(DWORD * readPos, DWORD * writePos);
-    int GetFrequency(DWORD * freq);
+    int GetCurrentPosition(DWORD* readPos, DWORD* writePos);
+    int GetFrequency(DWORD* freq);
     int SetPan(signed int pan);
     void Release();
     int GetStatus(DWORD * r);
+
+    // Not part of the API
     void Destroy();
     
     std::vector<BYTE>* GetBuffer();
@@ -100,7 +102,8 @@ public:
     
 };
 
-class SDLSound
+// An SDL implementation of used IDirectSound API's
+class SDLSoundSystem
 {
 public:
     int DuplicateSoundBuffer(AE_BUFFERTYPE* pDSBufferOriginal, AE_BUFFERTYPE** ppDSBufferDuplicate)
@@ -109,7 +112,6 @@ public:
         return 0;
     }
 
-    
     int CreateSoundBuffer(LPCDSBUFFERDESC /*pcDSBufferDesc*/, AE_BUFFERTYPE** /*ppDSBuffer*/, void* /*pUnkOuter*/)
     {
         return 0;
@@ -124,8 +126,6 @@ public:
 signed int CC SND_CreateDS_SDL(unsigned int /*sampleRate*/, int /*bitsPerSample*/, int /*isStereo*/);
 int CC SND_Clear_SDL(SoundEntry* pSoundEntry, unsigned int sampleOffset, unsigned int size);
 EXPORT char * CC SND_HR_Err_To_String_4EEC70(long hr);
-
-
 
 
 #endif
