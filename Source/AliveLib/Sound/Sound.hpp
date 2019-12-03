@@ -39,6 +39,14 @@ typedef struct _DSBUFFERDESC
 #endif
 } DSBUFFERDESC, *LPDSBUFFERDESC;
 typedef const DSBUFFERDESC *LPCDSBUFFERDESC;
+
+#define FAILED(hr) (((HRESULT)(hr)) < 0)
+#define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
+
+#ifndef _HRESULT_DEFINED
+typedef int HRESULT;
+#endif
+
 #endif
 
 #if USE_SDL2_SOUND
