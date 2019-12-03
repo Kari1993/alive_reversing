@@ -21,7 +21,7 @@ typedef struct tWAVEFORMATEX
     WORD        wBitsPerSample;     /* number of bits per sample of mono data */
     WORD        cbSize;             /* the count in bytes of the size of */
                                     /* extra information (after cbSize) */
-} WAVEFORMATEX, *PWAVEFORMATEX, NEAR *NPWAVEFORMATEX, FAR *LPWAVEFORMATEX;
+} WAVEFORMATEX, *PWAVEFORMATEX, *NPWAVEFORMATEX, *LPWAVEFORMATEX;
 
 /* flags for wFormatTag field of WAVEFORMAT */
 #define WAVE_FORMAT_PCM     1
