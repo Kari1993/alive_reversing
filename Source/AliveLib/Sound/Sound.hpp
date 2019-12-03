@@ -5,6 +5,40 @@
 #if !USE_SDL2_SOUND
 #include <mmeapi.h>
 #include <dsound.h>
+#else
+/*
+ *  extended waveform format structure used for all non-PCM formats. this
+ *  structure is common to all non-PCM formats.
+ */
+ // NOTE: Windows type
+typedef struct tWAVEFORMATEX
+{
+    WORD        wFormatTag;         /* format type */
+    WORD        nChannels;          /* number of channels (i.e. mono, stereo...) */
+    DWORD       nSamplesPerSec;     /* sample rate */
+    DWORD       nAvgBytesPerSec;    /* for buffer estimation */
+    WORD        nBlockAlign;        /* block size of data */
+    WORD        wBitsPerSample;     /* number of bits per sample of mono data */
+    WORD        cbSize;             /* the count in bytes of the size of */
+                                    /* extra information (after cbSize) */
+} WAVEFORMATEX, *PWAVEFORMATEX, NEAR *NPWAVEFORMATEX, FAR *LPWAVEFORMATEX;
+
+/* flags for wFormatTag field of WAVEFORMAT */
+#define WAVE_FORMAT_PCM     1
+
+// Note: Windows SDound type
+typedef struct _DSBUFFERDESC
+{
+    DWORD           dwSize;
+    DWORD           dwFlags;
+    DWORD           dwBufferBytes;
+    DWORD           dwReserved;
+    LPWAVEFORMATEX  lpwfxFormat;
+#if DIRECTSOUND_VERSION >= 0x0700
+    GUID            guid3DAlgorithm;
+#endif
+} DSBUFFERDESC, *LPDSBUFFERDESC;
+typedef const DSBUFFERDESC *LPCDSBUFFERDESC;
 #endif
 
 #if USE_SDL2_SOUND

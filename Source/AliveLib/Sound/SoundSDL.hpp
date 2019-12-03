@@ -109,6 +109,12 @@ public:
         return 0;
     }
 
+    
+    int CreateSoundBuffer(LPCDSBUFFERDESC /*pcDSBufferDesc*/, AE_BUFFERTYPE** /*ppDSBuffer*/, void* /*pUnkOuter*/)
+    {
+        return 0;
+    }
+
     int Release()
     {
         return 0;
