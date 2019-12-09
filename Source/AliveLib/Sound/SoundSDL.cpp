@@ -35,7 +35,7 @@ SDLSoundBuffer::SDLSoundBuffer(const DSBUFFERDESC& bufferDesc, int soundSysFreq)
 
 
     mState.iSampleCount = bufferDesc.dwBufferBytes / 2;
-    mBuffer = std::make_unique<std::vector<BYTE>>(bufferDesc.dwBufferBytes);
+    mBuffer = std::make_shared<std::vector<BYTE>>(bufferDesc.dwBufferBytes);
     mState.iBlockAlign = bufferDesc.lpwfxFormat->nBlockAlign;
     mState.iChannels = bufferDesc.lpwfxFormat->nChannels;
 
