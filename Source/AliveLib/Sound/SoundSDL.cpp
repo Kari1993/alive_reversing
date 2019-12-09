@@ -7,6 +7,7 @@
 #include "Error.hpp"
 #include "Sound/Midi.hpp"
 #include <mutex>
+#include <list>
 #include "Reverb.hpp"
 #include "Sys.hpp"
 
@@ -14,6 +15,8 @@
 
 bool gReverbEnabled = false;
 bool gAudioStereo = true;
+
+std::list<SDLSoundBuffer*> gBuffers;
 
 SDLSoundBuffer::SDLSoundBuffer(const DSBUFFERDESC& bufferDesc, int soundSysFreq)
     : mSoundSysFreq(soundSysFreq)
@@ -31,10 +34,11 @@ SDLSoundBuffer::SDLSoundBuffer(const DSBUFFERDESC& bufferDesc, int soundSysFreq)
 
 
     mState.iSampleCount = bufferDesc.dwBufferBytes / 2;
-    mBuffer.resize(bufferDesc.dwBufferBytes);
+    mBuffer = std::make_unique<std::vector<BYTE>>(bufferDesc.dwBufferBytes);
     mState.iBlockAlign = bufferDesc.lpwfxFormat->nBlockAlign;
     mState.iChannels = bufferDesc.lpwfxFormat->nChannels;
 
+    gBuffers.push_back(this);
 }
 
 
@@ -45,12 +49,18 @@ SDLSoundBuffer::SDLSoundBuffer(const SDLSoundBuffer& rhs)
 }
 
 
+SDLSoundBuffer::~SDLSoundBuffer()
+{
+    gBuffers.remove(this);
+}
+
 SDLSoundBuffer& SDLSoundBuffer::operator=(const SDLSoundBuffer& rhs)
 {
     if (this != &rhs)
     {
         mState = rhs.mState;
         mBuffer = rhs.mBuffer;
+        mSoundSysFreq = rhs.mSoundSysFreq;
     }
     return *this;
 }
@@ -150,7 +160,7 @@ void SDLSoundBuffer::Destroy()
     delete this;
 }
 
-std::vector<BYTE>& SDLSoundBuffer::GetBuffer()
+std::shared_ptr<std::vector<BYTE>>  SDLSoundBuffer::GetBuffer()
 {
     return mBuffer;
 }
@@ -169,7 +179,7 @@ int CC SND_Clear_SDL(SoundEntry* pSoundEntry, unsigned int sampleOffset, unsigne
     const DWORD alignedSize = size * pSoundEntry->field_1D_blockAlign;
 
     // TODO: Should only clear from offset to size ??
-    memset(pSoundEntry->field_4_pDSoundBuffer->GetBuffer().data(), 0, pSoundEntry->field_14_buffer_size_bytes);
+    memset(pSoundEntry->field_4_pDSoundBuffer->GetBuffer()->data(), 0, pSoundEntry->field_14_buffer_size_bytes);
 
     return 0;
 }
@@ -178,7 +188,7 @@ signed int CC SND_LoadSamples_SDL(const SoundEntry* pSnd, DWORD sampleOffset, un
 {
     const int offsetBytes = sampleOffset * pSnd->field_1D_blockAlign;
     const unsigned int bufferSizeBytes = sampleCount * pSnd->field_1D_blockAlign;
-    memcpy(reinterpret_cast<Uint8*>(pSnd->field_4_pDSoundBuffer->GetBuffer().data()) + offsetBytes, pSoundBuffer, bufferSizeBytes);
+    memcpy(reinterpret_cast<Uint8*>(pSnd->field_4_pDSoundBuffer->GetBuffer()->data()) + offsetBytes, pSoundBuffer, bufferSizeBytes);
     return 0;
 }
 
@@ -295,12 +305,13 @@ void SDLSoundSystem::RenderAudio(StereoSample_S16* pSampleBuffer, int sampleBuff
 
     memset(mNoReverbBuffer, 0, sampleBufferCount * sizeof(StereoSample_S16));
 
-    for (int i = 0; i < 256; i++)
+    auto tmpList = gBuffers;
+    //for (int i = 0; i < 256; i++)
+    for (auto entry : tmpList)
     {
-        SoundEntry* pEntry = sSoundSamples_BBBF38[i];
-        if (pEntry)
+        if (entry)
         {
-            RenderSoundBuffer(*pEntry, pSampleBuffer, sampleBufferCount);
+            RenderSoundBuffer(*entry, pSampleBuffer, sampleBufferCount);
         }
     }
 
@@ -319,32 +330,32 @@ void SDLSoundSystem::RenderAudio(StereoSample_S16* pSampleBuffer, int sampleBuff
 }
 
 
-void SDLSoundSystem::RenderSoundBuffer(SoundEntry& entry, StereoSample_S16* pSampleBuffer, int sampleBufferCount)
+void SDLSoundSystem::RenderSoundBuffer(SDLSoundBuffer& entry, StereoSample_S16* pSampleBuffer, int sampleBufferCount)
 {
     bool reverbPass = false;
 
-    SDLSoundBuffer* pVoice = entry.field_4_pDSoundBuffer;
+    SDLSoundBuffer* pVoice = &entry;
 
-    if (pVoice == nullptr || pVoice->mBuffer.empty())
+    if (pVoice == nullptr || !pVoice->mBuffer || pVoice->mBuffer->empty())
     {
         return;
     }
 
     if (pVoice->mState.bIsReleased)
     {
-       // pVoice->Destroy(); // TODO: Still correct ??
+        pVoice->Destroy(); // TODO: Still correct ??
         return;
     }
 
     // Clear Temp Sample Buffer
     memset(mTempSoundBuffer, 0, sampleBufferCount * sizeof(StereoSample_S16));
 
-    Sint16* pVoiceBufferPtr = reinterpret_cast<Sint16*>(pVoice->GetBuffer().data());
+    Sint16* pVoiceBufferPtr = reinterpret_cast<Sint16*>(pVoice->GetBuffer()->data());
 
     bool loopActive = true;
-    for (int i = 0; i < sampleBufferCount && !pVoice->mBuffer.empty() && loopActive; i++)
+    for (int i = 0; i < sampleBufferCount && pVoice->mBuffer && loopActive; i++)
     {
-        if (pVoice->mBuffer.empty() || pVoice->mState.eStatus != AE_SDL_Voice_Status::Playing || pVoice->mState.iSampleCount == 0)
+        if (pVoice->mBuffer->empty() || pVoice->mState.eStatus != AE_SDL_Voice_Status::Playing || pVoice->mState.iSampleCount == 0)
         {
             loopActive = false;
             continue;

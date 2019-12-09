@@ -60,6 +60,7 @@ class SDLSoundBuffer
 
 public:
     SDLSoundBuffer(const SDLSoundBuffer& rhs);
+    ~SDLSoundBuffer();
 
     SDLSoundBuffer& operator = (const SDLSoundBuffer& rhs);
 
@@ -80,7 +81,7 @@ public:
     // Not part of the API
     void Destroy();
     
-    std::vector<BYTE>& GetBuffer();
+    std::shared_ptr<std::vector<BYTE>>  GetBuffer();
     int Duplicate(SDLSoundBuffer ** dupePtr);
 
 public:
@@ -103,7 +104,10 @@ public:
     };
 
     AE_SDL_Voice_State mState;
-    std::vector<BYTE> mBuffer;
+    
+    // When direct sound duplicates a buffer the underlaying sound buffer is shared/ref counter
+    std::shared_ptr<std::vector<BYTE>> mBuffer;
+    
     
 private:
     int mSoundSysFreq;
@@ -113,6 +117,7 @@ private:
 class SDLSoundSystem
 {
 public:
+
     void Init(unsigned int sampleRate, int bitsPerSample, int isStereo);
 
     HRESULT DuplicateSoundBuffer(TSoundBufferType* pDSBufferOriginal, TSoundBufferType** ppDSBufferDuplicate)
@@ -140,7 +145,7 @@ private:
     void AudioCallBack(Uint8* stream, int len);
     void RenderAudio(StereoSample_S16* pSampleBuffer, int sampleBufferCount);
 
-    void RenderSoundBuffer(SoundEntry& entry, StereoSample_S16* pSampleBuffer, int sampleBufferCount);
+    void RenderSoundBuffer(SDLSoundBuffer& entry, StereoSample_S16* pSampleBuffer, int sampleBufferCount);
 
 private:
     SDL_AudioSpec mAudioDeviceSpec = {};
