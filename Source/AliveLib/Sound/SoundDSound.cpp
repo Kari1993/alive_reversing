@@ -290,7 +290,7 @@ int CC SND_Clear_DSound(SoundEntry* pSoundEntry, unsigned int sampleOffset, unsi
     return 0;
 }
 
-EXPORT signed int CC SND_LoadSamples_4EF1C0(const SoundEntry* pSnd, DWORD sampleOffset, unsigned char* pSoundBuffer, unsigned int sampleCount)
+signed int CC SND_LoadSamples_DSound(const SoundEntry* pSnd, DWORD sampleOffset, unsigned char* pSoundBuffer, unsigned int sampleCount)
 {
     const int offsetBytes = sampleOffset * pSnd->field_1D_blockAlign;
     const unsigned int bufferSizeBytes = sampleCount * pSnd->field_1D_blockAlign;
