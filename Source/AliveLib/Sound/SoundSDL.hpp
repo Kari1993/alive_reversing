@@ -140,6 +140,8 @@ private:
     void AudioCallBack(Uint8* stream, int len);
     void RenderAudio(StereoSample_S16* pSampleBuffer, int sampleBufferCount);
 
+    void RenderSoundBuffer(SoundEntry& entry, StereoSample_S16* pSampleBuffer, int sampleBufferCount);
+
 private:
     SDL_AudioSpec mAudioDeviceSpec = {};
     static constexpr int kMixVolume = 127;
