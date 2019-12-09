@@ -125,11 +125,25 @@ public:
 
     HRESULT Release()
     {
+        delete this;
         return S_OK;
     }
 
+    // Called by audio thread - time critical
+    static void AudioCallBackStatic(void * userdata, Uint8 *stream, int len);
+
+private:
+    void AudioCallBack(Uint8* stream, int len);
+    void RenderAudio(StereoSample_S16* pSampleBuffer, int sampleBufferCount);
+
 private:
     SDL_AudioSpec mAudioDeviceSpec = {};
+    static constexpr int kMixVolume = 127;
+
+    int mCurrentSoundBufferSize = 0;
+    AudioFilterMode mAudioFilterMode = AudioFilterMode::Linear;
+    StereoSample_S16 * mTempSoundBuffer = nullptr;
+    StereoSample_S16 * mNoReverbBuffer = nullptr;
 };
 
 signed int CC SND_CreateDS_SDL(unsigned int /*sampleRate*/, int /*bitsPerSample*/, int /*isStereo*/);
