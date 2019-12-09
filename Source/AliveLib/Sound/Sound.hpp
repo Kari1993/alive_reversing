@@ -50,11 +50,11 @@ typedef int HRESULT;
 #endif
 
 #if USE_SDL2_SOUND
-using AE_BUFFERTYPE = class AE_SDL_Voice;
+using TSoundBufferType = class SDLSoundBuffer;
 extern bool gReverbEnabled;
 extern bool gAudioStereo;
 #else
-using AE_BUFFERTYPE = struct IDirectSoundBuffer;
+using TSoundBufferType = struct IDirectSoundBuffer;
 #endif
 
 #if USE_SDL2_SOUND
@@ -68,7 +68,7 @@ ALIVE_VAR_EXTERN(LPDIRECTSOUND, sDSound_BBC344);
 struct SoundEntry
 {
     int field_0_tableIdx;
-    AE_BUFFERTYPE* field_4_pDSoundBuffer;
+    TSoundBufferType* field_4_pDSoundBuffer;
     BYTE* field_8_pSoundBuffer;
     int field_C_buffer_size_bytes;
     int field_10;
@@ -84,7 +84,7 @@ ALIVE_ASSERT_SIZEOF(SoundEntry, 0x24);
 
 struct SoundBuffer
 {
-    AE_BUFFERTYPE * field_0_pDSoundBuffer;
+    TSoundBufferType * field_0_pDSoundBuffer;
     int field_4;
     int field_8_sample_idx;
     int field_C;

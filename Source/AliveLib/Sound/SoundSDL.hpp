@@ -54,11 +54,11 @@ enum AudioFilterMode
 };
 
 // An SDL implement of used IDirectSoundBuffer API's.
-class AE_SDL_Voice
+class SDLSoundBuffer
 {
 
 public:
-    AE_SDL_Voice();
+    SDLSoundBuffer();
 
     int SetVolume(int volume);
     int Play(int reserved, int priority, int flags);
@@ -76,7 +76,7 @@ public:
     void Destroy();
     
     std::vector<BYTE>* GetBuffer();
-    int Duplicate(AE_SDL_Voice ** dupePtr);
+    int Duplicate(SDLSoundBuffer ** dupePtr);
 
 public:
     struct AE_SDL_Voice_State
@@ -106,13 +106,13 @@ public:
 class SDLSoundSystem
 {
 public:
-    int DuplicateSoundBuffer(AE_BUFFERTYPE* pDSBufferOriginal, AE_BUFFERTYPE** ppDSBufferDuplicate)
+    int DuplicateSoundBuffer(TSoundBufferType* pDSBufferOriginal, TSoundBufferType** ppDSBufferDuplicate)
     {
         pDSBufferOriginal->Duplicate(ppDSBufferDuplicate);
         return 0;
     }
 
-    int CreateSoundBuffer(LPCDSBUFFERDESC /*pcDSBufferDesc*/, AE_BUFFERTYPE** /*ppDSBuffer*/, void* /*pUnkOuter*/)
+    int CreateSoundBuffer(LPCDSBUFFERDESC /*pcDSBufferDesc*/, TSoundBufferType** /*ppDSBuffer*/, void* /*pUnkOuter*/)
     {
         return 0;
     }
