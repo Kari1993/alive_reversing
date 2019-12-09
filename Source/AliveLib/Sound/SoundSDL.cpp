@@ -12,7 +12,6 @@
 
 #include <cinder/audio/dsp/RingBuffer.h>
 
-#define MAX_VOICE_COUNT 1024
 
 bool gReverbEnabled = false;
 bool gAudioStereo = true;
@@ -21,40 +20,11 @@ static int gSoundBufferSamples = 256;
 static int gCurrentSoundBufferSize = 0;
 const int gMixVolume = 127;
 
-SDLSoundBuffer* sAE_ActiveVoices[MAX_VOICE_COUNT] = {};
-
 static SDL_AudioSpec gAudioDeviceSpec = {};
 static AudioFilterMode gAudioFilterMode = AudioFilterMode::Linear;
 static StereoSample_S16 * pTempSoundBuffer;
 static StereoSample_S16 * pNoReverbBuffer;
 
-void AddVoiceToActiveList(SDLSoundBuffer * pVoice)
-{
-    for (int i = 0; i < MAX_VOICE_COUNT; i++)
-    {
-        if (sAE_ActiveVoices[i] == nullptr)
-        {
-            sAE_ActiveVoices[i] = pVoice;
-            return;
-        }
-    }
-
-    LOG_WARNING("WARNING !!: Failed to allocate voice! No space left!");
-}
-
-void RemoveVoiceFromActiveList(SDLSoundBuffer * pVoice)
-{
-    for (int i = 0; i < MAX_VOICE_COUNT; i++)
-    {
-        if (sAE_ActiveVoices[i] == pVoice)
-        {
-            sAE_ActiveVoices[i] = nullptr;
-            return;
-        }
-    }
-
-    LOG_WARNING("WARNING !!: Could not find voice to remove!?!");
-}
 
 void AE_SDL_Audio_Generate(StereoSample_S16 * pSampleBuffer, int sampleBufferCount)
 {
@@ -86,9 +56,9 @@ void AE_SDL_Audio_Generate(StereoSample_S16 * pSampleBuffer, int sampleBufferCou
 
     bool reverbPass = false;
 
-    for (int vi = 0; vi < MAX_VOICE_COUNT; vi++)
+    for (int vi = 0; vi < 256; vi++)
     {
-        SDLSoundBuffer * pVoice = sAE_ActiveVoices[vi];
+        SDLSoundBuffer * pVoice = sSoundSamples_BBBF38[vi]->field_4_pDSoundBuffer;
 
         if (pVoice == nullptr || !pVoice->pBuffer)
         {
@@ -256,8 +226,6 @@ SDLSoundBuffer::SDLSoundBuffer()
     mState.iChannels = 1;
     mState.fPlaybackPosition = 0;
     mState.eStatus = AE_SDL_Voice_Status::Stopped;
-
-    AddVoiceToActiveList(this);
 }
 
 HRESULT SDLSoundBuffer::SetVolume(int volume)
@@ -352,8 +320,6 @@ void SDLSoundBuffer::Destroy()
 {
     // remove self from global list and
     // decrement shared mem ptr to audio buffer
-
-    RemoveVoiceFromActiveList(this);
     delete this;
 }
 
@@ -431,8 +397,6 @@ signed int CC SND_CreateDS_SDL(unsigned int /*sampleRate*/, int /*bitsPerSample*
             gSoundBufferSamples = gAudioDeviceSpec.samples;
 
             Reverb_Init(gAudioDeviceSpec.freq);
-
-            memset(&sAE_ActiveVoices, 0, sizeof(sAE_ActiveVoices));
 
             SDL_PauseAudio(0);
 
