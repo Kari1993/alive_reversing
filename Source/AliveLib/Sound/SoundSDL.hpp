@@ -59,7 +59,11 @@ class SDLSoundBuffer
 {
 
 public:
-    explicit SDLSoundBuffer(int soundSysFreq);
+    SDLSoundBuffer(const SDLSoundBuffer& rhs);
+
+    SDLSoundBuffer& operator = (const SDLSoundBuffer& rhs);
+
+    SDLSoundBuffer(const DSBUFFERDESC& bufferDesc, int soundSysFreq);
 
     HRESULT SetVolume(int volume);
     HRESULT Play(int reserved, int priority, int flags);
@@ -76,7 +80,7 @@ public:
     // Not part of the API
     void Destroy();
     
-    std::vector<BYTE>* GetBuffer();
+    std::vector<BYTE>& GetBuffer();
     int Duplicate(SDLSoundBuffer ** dupePtr);
 
 public:
@@ -90,7 +94,7 @@ public:
 
         AE_SDL_Voice_Status eStatus;
         bool bLoop;
-        std::atomic<bool> bIsReleased;
+        bool bIsReleased;
         float fPlaybackPosition;
 
         int iSampleCount;
@@ -99,7 +103,7 @@ public:
     };
 
     AE_SDL_Voice_State mState;
-    std::shared_ptr<std::vector<BYTE>> pBuffer;
+    std::vector<BYTE> mBuffer;
     
 private:
     int mSoundSysFreq;
@@ -117,9 +121,9 @@ public:
         return S_OK;
     }
 
-    HRESULT CreateSoundBuffer(LPCDSBUFFERDESC /*pcDSBufferDesc*/, TSoundBufferType** ppDSBuffer, void* /*pUnkOuter*/)
+    HRESULT CreateSoundBuffer(LPCDSBUFFERDESC pcDSBufferDesc, TSoundBufferType** ppDSBuffer, void* /*pUnkOuter*/)
     {
-        *ppDSBuffer = new SDLSoundBuffer(mAudioDeviceSpec.freq);
+        *ppDSBuffer = new SDLSoundBuffer(*pcDSBufferDesc, mAudioDeviceSpec.freq);
         return S_OK;
     }
 
