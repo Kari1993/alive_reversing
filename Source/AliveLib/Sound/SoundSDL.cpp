@@ -8,6 +8,7 @@
 #include "Sound/Midi.hpp"
 #include <mutex>
 #include <list>
+#include <memory>
 #include "Reverb.hpp"
 #include "Sys.hpp"
 
