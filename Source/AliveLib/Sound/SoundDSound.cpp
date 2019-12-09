@@ -127,7 +127,7 @@ signed int CC SND_CreateDS_DSound(unsigned int sampleRate, int bitsPerSample, in
 
         if (hwnd)
         {
-            if (sDSound_BBC344->SetCooperativeLevel(hwnd, DSSCL_EXCLUSIVE))
+            if (FAILED(sDSound_BBC344->SetCooperativeLevel(hwnd, DSSCL_EXCLUSIVE)))
             {
                 Error_PushErrorRecord_4F2920(
                     "C:\\abe2\\code\\POS\\SND.C",
@@ -139,7 +139,7 @@ signed int CC SND_CreateDS_DSound(unsigned int sampleRate, int bitsPerSample, in
             else
             {
                 DSCAPS dsCaps;
-                dsCaps.dwSize = 96;
+                dsCaps.dwSize = sizeof(DSCAPS);
                 if (!sDSound_BBC344->GetCaps(&dsCaps))
                 {
                     if (dsCaps.dwFlags & DSCAPS_PRIMARY16BIT)

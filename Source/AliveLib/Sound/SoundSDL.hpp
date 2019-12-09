@@ -60,17 +60,17 @@ class SDLSoundBuffer
 public:
     SDLSoundBuffer();
 
-    int SetVolume(int volume);
-    int Play(int reserved, int priority, int flags);
-    int Stop();
+    HRESULT SetVolume(int volume);
+    HRESULT Play(int reserved, int priority, int flags);
+    HRESULT Stop();
 
-    int SetFrequency(int frequency);
-    int SetCurrentPosition(int position);
-    int GetCurrentPosition(DWORD* readPos, DWORD* writePos);
-    int GetFrequency(DWORD* freq);
-    int SetPan(signed int pan);
+    HRESULT SetFrequency(int frequency);
+    HRESULT SetCurrentPosition(int position);
+    HRESULT GetCurrentPosition(DWORD* readPos, DWORD* writePos);
+    HRESULT GetFrequency(DWORD* freq);
+    HRESULT SetPan(signed int pan);
     void Release();
-    int GetStatus(DWORD * r);
+    HRESULT GetStatus(DWORD * r);
 
     // Not part of the API
     void Destroy();
@@ -106,20 +106,20 @@ public:
 class SDLSoundSystem
 {
 public:
-    int DuplicateSoundBuffer(TSoundBufferType* pDSBufferOriginal, TSoundBufferType** ppDSBufferDuplicate)
+    HRESULT DuplicateSoundBuffer(TSoundBufferType* pDSBufferOriginal, TSoundBufferType** ppDSBufferDuplicate)
     {
         pDSBufferOriginal->Duplicate(ppDSBufferDuplicate);
-        return 0;
+        return S_OK;
     }
 
-    int CreateSoundBuffer(LPCDSBUFFERDESC /*pcDSBufferDesc*/, TSoundBufferType** /*ppDSBuffer*/, void* /*pUnkOuter*/)
+    HRESULT CreateSoundBuffer(LPCDSBUFFERDESC /*pcDSBufferDesc*/, TSoundBufferType** /*ppDSBuffer*/, void* /*pUnkOuter*/)
     {
-        return 0;
+        return S_OK;
     }
 
-    int Release()
+    HRESULT Release()
     {
-        return 0;
+        return S_OK;
     }
 };
 

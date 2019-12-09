@@ -67,24 +67,17 @@ signed int CC SND_Renew_4EEDD0(SoundEntry* pSnd)
         return -1;
     }
 
-    WAVEFORMATEX waveFormat;
-    DSBUFFERDESC bufferDesc;
-
-    waveFormat.wFormatTag = 0;
-    waveFormat.nSamplesPerSec = 0;
-    waveFormat.nAvgBytesPerSec = 0;
-    waveFormat.nBlockAlign = 0;
-    waveFormat.cbSize = 0;
+    WAVEFORMATEX waveFormat = {};
+    DSBUFFERDESC bufferDesc = {};
 
     SND_Init_WaveFormatEx_4EEA00(&waveFormat, pSnd->field_18_sampleRate, pSnd->field_1C_bitsPerSample, pSnd->field_20_isStereo & 1);
 
     bufferDesc.dwBufferBytes = pSnd->field_14_buffer_size_bytes;
-    bufferDesc.dwReserved = 0;
     bufferDesc.lpwfxFormat = &waveFormat;
-    bufferDesc.dwSize = 20;
+    bufferDesc.dwSize = sizeof(DSBUFFERDESC);
     bufferDesc.dwFlags = 82144; // TODO: Fix constants
 
-    if (sDSound_BBC344->CreateSoundBuffer(&bufferDesc, &pSnd->field_4_pDSoundBuffer, 0))
+    if (FAILED(sDSound_BBC344->CreateSoundBuffer(&bufferDesc, &pSnd->field_4_pDSoundBuffer, 0)))
     {
         Error_PushErrorRecord_4F2920("C:\\abe2\\code\\POS\\SND.C", 371, -1, "SND_Renew(): Cannot create ds sound buffer");
         return -1;
@@ -286,21 +279,15 @@ EXPORT signed int CC SND_New_4EEFF0(SoundEntry *pSnd, int sampleLength, int samp
 
     if (sLoadedSoundsCount_BBC394 < 256)
     {
-        WAVEFORMATEX waveFormatEx;
-        DSBUFFERDESC bufferDesc;
+        WAVEFORMATEX waveFormatEx = {};
+        DSBUFFERDESC bufferDesc = {};
 
-        waveFormatEx.wFormatTag = 0;
-        waveFormatEx.nSamplesPerSec = 0;
-        waveFormatEx.nAvgBytesPerSec = 0;
-        waveFormatEx.nBlockAlign = 0;
-        waveFormatEx.cbSize = 0;
         SND_Init_WaveFormatEx_4EEA00(&waveFormatEx, sampleRate, static_cast<unsigned char>(bitsPerSample), isStereo & 1);
 
         const int sampleByteSize = sampleLength * waveFormatEx.nBlockAlign;
-        bufferDesc.dwReserved = 0;
         bufferDesc.lpwfxFormat = &waveFormatEx;
         pSnd->field_1D_blockAlign = static_cast<unsigned char>(waveFormatEx.nBlockAlign);
-        bufferDesc.dwSize = 20;
+        bufferDesc.dwSize = sizeof(DSBUFFERDESC);
         bufferDesc.dwBufferBytes = sampleByteSize;
         bufferDesc.dwFlags = 82152;
 
@@ -420,7 +407,7 @@ EXPORT int CC SND_Buffer_Set_Frequency_4EFC90(int idx, float hzChangeFreq)
     }
 
     DWORD currrentFreqHz = 0;
-    if (!pDSoundBuffer->GetFrequency(&currrentFreqHz))
+    if (SUCCEEDED(pDSoundBuffer->GetFrequency(&currrentFreqHz)))
     {
         DWORD freqHz = static_cast<DWORD>(currrentFreqHz * hzChangeFreq);
         if (freqHz < DSBFREQUENCY_MIN)

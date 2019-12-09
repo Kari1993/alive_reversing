@@ -39,7 +39,7 @@ void AddVoiceToActiveList(SDLSoundBuffer * pVoice)
         }
     }
 
-    printf("WARNING !!: Failed to allocate voice! No space left!\n");
+    LOG_WARNING("WARNING !!: Failed to allocate voice! No space left!");
 }
 
 void RemoveVoiceFromActiveList(SDLSoundBuffer * pVoice)
@@ -53,7 +53,7 @@ void RemoveVoiceFromActiveList(SDLSoundBuffer * pVoice)
         }
     }
 
-    printf("WARNING !!: Could not find voice to remove!?!\n");
+    LOG_WARNING("WARNING !!: Could not find voice to remove!?!");
 }
 
 void AE_SDL_Audio_Generate(StereoSample_S16 * pSampleBuffer, int sampleBufferCount)
@@ -260,7 +260,7 @@ SDLSoundBuffer::SDLSoundBuffer()
     AddVoiceToActiveList(this);
 }
 
-int SDLSoundBuffer::SetVolume(int volume)
+HRESULT SDLSoundBuffer::SetVolume(int volume)
 {
     mState.iVolumeTarget = volume;
 
@@ -271,10 +271,10 @@ int SDLSoundBuffer::SetVolume(int volume)
 
     mState.bVolDirty = true;
 
-    return 0;
+    return S_OK;
 }
 
-int SDLSoundBuffer::Play(int, int, int flags)
+HRESULT SDLSoundBuffer::Play(int, int, int flags)
 {
     mState.fPlaybackPosition = 0;
     mState.eStatus = AE_SDL_Voice_Status::Playing;
@@ -284,46 +284,46 @@ int SDLSoundBuffer::Play(int, int, int flags)
         mState.bLoop = true;
     }
 
-    return 0;
+    return S_OK;
 }
 
-int SDLSoundBuffer::Stop()
+HRESULT SDLSoundBuffer::Stop()
 {
     mState.eStatus = AE_SDL_Voice_Status::Stopped;
 
-    return 0;
+    return S_OK;
 }
 
-int SDLSoundBuffer::SetFrequency(int frequency)
+HRESULT SDLSoundBuffer::SetFrequency(int frequency)
 {
     mState.fFrequency = frequency / static_cast<float>(gAudioDeviceSpec.freq);
-    return 0;
+    return S_OK;
 }
 
-int SDLSoundBuffer::SetCurrentPosition(int position) // This offset is apparently in bytes
+HRESULT SDLSoundBuffer::SetCurrentPosition(int position) // This offset is apparently in bytes
 {
     mState.fPlaybackPosition = static_cast<float>(position / mState.iBlockAlign);
-    return 0;
+    return S_OK;
 }
 
-int SDLSoundBuffer::GetCurrentPosition(DWORD * readPos, DWORD * writePos)
+HRESULT SDLSoundBuffer::GetCurrentPosition(DWORD * readPos, DWORD * writePos)
 {
     *readPos = static_cast<DWORD>(mState.fPlaybackPosition * mState.iBlockAlign);
     *writePos = 0;
 
-    return 0;
+    return S_OK;
 }
 
-int SDLSoundBuffer::GetFrequency(DWORD * freq)
+HRESULT SDLSoundBuffer::GetFrequency(DWORD * freq)
 {
     *freq = static_cast<DWORD>(mState.fFrequency * gAudioDeviceSpec.freq);
-    return 0;
+    return S_OK;
 }
 
-int SDLSoundBuffer::SetPan(signed int pan)
+HRESULT SDLSoundBuffer::SetPan(signed int pan)
 {
     mState.iPan = pan;
-    return 0;
+    return S_OK;
 }
 
 void SDLSoundBuffer::Release()
@@ -331,7 +331,7 @@ void SDLSoundBuffer::Release()
     mState.bIsReleased = true;
 }
 
-int SDLSoundBuffer::GetStatus(DWORD * r)
+HRESULT SDLSoundBuffer::GetStatus(DWORD * r)
 {
     if (mState.eStatus == AE_SDL_Voice_Status::Playing)
     {
@@ -345,7 +345,7 @@ int SDLSoundBuffer::GetStatus(DWORD * r)
     {
         *r |= DSBSTATUS_TERMINATED;
     }
-    return 0;
+    return S_OK;
 }
 
 void SDLSoundBuffer::Destroy()
@@ -400,7 +400,7 @@ signed int CC SND_CreateDS_SDL(unsigned int /*sampleRate*/, int /*bitsPerSample*
     {
         for (int i = 0; i < SDL_GetNumAudioDrivers(); i++)
         {
-            printf("SDL Audio Driver %i: %s\n", i, SDL_GetAudioDriver(i));
+            LOG_INFO("SDL Audio Driver " << i << " " << SDL_GetAudioDriver(i));
         }
 
         gAudioDeviceSpec.callback = AE_SDL_Audio_Callback;
@@ -410,16 +410,23 @@ signed int CC SND_CreateDS_SDL(unsigned int /*sampleRate*/, int /*bitsPerSample*
         gAudioDeviceSpec.samples = static_cast<Uint16>(gSoundBufferSamples);
         gAudioDeviceSpec.userdata = NULL;
 
-        if (SDL_OpenAudio(&gAudioDeviceSpec, NULL) < 0) {
-            fprintf(stderr, "Couldn't open SDL audio: %s\n", SDL_GetError());
+        if (SDL_OpenAudio(&gAudioDeviceSpec, NULL) < 0) 
+        {
+            LOG_ERROR("Couldn't open SDL audio: " << SDL_GetError());
         }
         else
         {
-            printf("-----------------------------\n");
-            printf("Audio Device opened, got specs:\n");
-            printf("Channels: %i\nFormat: %X\nFreq: %i\nPadding: %i\nSamples: %i\nSize: %i\nSilence: %i\n",
-                gAudioDeviceSpec.channels, gAudioDeviceSpec.format, gAudioDeviceSpec.freq, gAudioDeviceSpec.padding, gAudioDeviceSpec.samples, gAudioDeviceSpec.size, gAudioDeviceSpec.silence);
-            printf("-----------------------------\n");
+            LOG_INFO("-----------------------------");
+            LOG_INFO("Audio Device opened, got specs:");
+            LOG_INFO(
+                "Channels: " << gAudioDeviceSpec.channels << " " <<
+                "nFormat: " << gAudioDeviceSpec.format << " " <<
+                "nFreq: " << gAudioDeviceSpec.freq << " " <<
+                "nPadding: " << gAudioDeviceSpec.padding << " " <<
+                "nSamples: " << gAudioDeviceSpec.samples << " " <<
+                "nSize: " << gAudioDeviceSpec.size << " " <<
+                "nSilence: " << gAudioDeviceSpec.silence);
+            LOG_INFO("-----------------------------");
 
             gSoundBufferSamples = gAudioDeviceSpec.samples;
 
