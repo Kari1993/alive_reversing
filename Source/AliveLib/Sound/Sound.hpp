@@ -45,6 +45,8 @@ typedef const DSBUFFERDESC *LPCDSBUFFERDESC;
 
 #ifndef _HRESULT_DEFINED
 typedef int HRESULT;
+
+#define S_OK                            ((HRESULT)0L)
 #endif
 
 #endif
