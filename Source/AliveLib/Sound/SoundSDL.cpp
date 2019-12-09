@@ -200,7 +200,7 @@ EXPORT char * CC SND_HR_Err_To_String_4EEC70(long)
 
 void SDLSoundSystem::Init(unsigned int /*sampleRate*/, int /*bitsPerSample*/, int /*isStereo*/)
 {
-    if (!SDL_Init(SDL_INIT_AUDIO))
+    if (SDL_Init(SDL_INIT_AUDIO) != 0)
     {
         LOG_ERROR("SDL_Init(SDL_INIT_AUDIO) failed " << SDL_GetError());
         return;
@@ -297,7 +297,13 @@ void SDLSoundSystem::RenderAudio(StereoSample_S16 * pSampleBuffer, int sampleBuf
 
     for (int vi = 0; vi < 256; vi++)
     {
-        SDLSoundBuffer * pVoice = sSoundSamples_BBBF38[vi]->field_4_pDSoundBuffer;
+        SoundEntry* pEntry = sSoundSamples_BBBF38[vi];
+        if (!pEntry)
+        {
+            continue;
+        }
+
+        SDLSoundBuffer* pVoice = pEntry->field_4_pDSoundBuffer;
 
         if (pVoice == nullptr || pVoice->mBuffer.empty())
         {
