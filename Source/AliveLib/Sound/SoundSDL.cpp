@@ -20,7 +20,7 @@ static int gSoundBufferSamples = 256;
 static int gCurrentSoundBufferSize = 0;
 const int gMixVolume = 127;
 
-static SDL_AudioSpec gAudioDeviceSpec = {};
+
 static AudioFilterMode gAudioFilterMode = AudioFilterMode::Linear;
 static StereoSample_S16 * pTempSoundBuffer;
 static StereoSample_S16 * pNoReverbBuffer;
@@ -209,12 +209,8 @@ void AE_SDL_Audio_Callback(void * /*userdata*/, Uint8 *stream, int len)
     }*/
 }
 
-void AE_SDL_AudioShutdown()
-{
-    // Todo: clean up audio + reverb buffers
-}
-
-SDLSoundBuffer::SDLSoundBuffer()
+SDLSoundBuffer::SDLSoundBuffer(int soundSysFreq)
+    : mSoundSysFreq(soundSysFreq)
 {
     mState.iVolume = 0;
     mState.iVolumeTarget = 127;
@@ -264,7 +260,7 @@ HRESULT SDLSoundBuffer::Stop()
 
 HRESULT SDLSoundBuffer::SetFrequency(int frequency)
 {
-    mState.fFrequency = frequency / static_cast<float>(gAudioDeviceSpec.freq);
+    mState.fFrequency = frequency / static_cast<float>(mSoundSysFreq);
     return S_OK;
 }
 
@@ -284,7 +280,7 @@ HRESULT SDLSoundBuffer::GetCurrentPosition(DWORD * readPos, DWORD * writePos)
 
 HRESULT SDLSoundBuffer::GetFrequency(DWORD * freq)
 {
-    *freq = static_cast<DWORD>(mState.fFrequency * gAudioDeviceSpec.freq);
+    *freq = static_cast<DWORD>(mState.fFrequency * mSoundSysFreq);
     return S_OK;
 }
 
@@ -330,7 +326,7 @@ std::vector<BYTE>* SDLSoundBuffer::GetBuffer()
 
 int SDLSoundBuffer::Duplicate(SDLSoundBuffer ** dupePtr)
 {
-    SDLSoundBuffer * dupe = new SDLSoundBuffer();
+    SDLSoundBuffer * dupe = new SDLSoundBuffer(mSoundSysFreq);
     memcpy(&dupe->mState, &this->mState, sizeof(AE_SDL_Voice_State));
     dupe->pBuffer = this->pBuffer;
     *dupePtr = dupe;
@@ -358,69 +354,10 @@ signed int CC SND_LoadSamples_SDL(const SoundEntry* pSnd, DWORD sampleOffset, un
     return 0;
 }
 
-signed int CC SND_CreateDS_SDL(unsigned int /*sampleRate*/, int /*bitsPerSample*/, int /*isStereo*/)
+signed int CC SND_CreateDS_SDL(unsigned int sampleRate, int bitsPerSample, int isStereo)
 {
     sDSound_BBC344 = new SDLSoundSystem();
-
-    if (!SDL_Init(SDL_INIT_AUDIO))
-    {
-        for (int i = 0; i < SDL_GetNumAudioDrivers(); i++)
-        {
-            LOG_INFO("SDL Audio Driver " << i << " " << SDL_GetAudioDriver(i));
-        }
-
-        gAudioDeviceSpec.callback = AE_SDL_Audio_Callback;
-        gAudioDeviceSpec.format = AUDIO_S16;
-        gAudioDeviceSpec.channels = 2;
-        gAudioDeviceSpec.freq = 44100;
-        gAudioDeviceSpec.samples = static_cast<Uint16>(gSoundBufferSamples);
-        gAudioDeviceSpec.userdata = NULL;
-
-        if (SDL_OpenAudio(&gAudioDeviceSpec, NULL) < 0) 
-        {
-            LOG_ERROR("Couldn't open SDL audio: " << SDL_GetError());
-        }
-        else
-        {
-            LOG_INFO("-----------------------------");
-            LOG_INFO("Audio Device opened, got specs:");
-            LOG_INFO(
-                "Channels: " << gAudioDeviceSpec.channels << " " <<
-                "nFormat: " << gAudioDeviceSpec.format << " " <<
-                "nFreq: " << gAudioDeviceSpec.freq << " " <<
-                "nPadding: " << gAudioDeviceSpec.padding << " " <<
-                "nSamples: " << gAudioDeviceSpec.samples << " " <<
-                "nSize: " << gAudioDeviceSpec.size << " " <<
-                "nSilence: " << gAudioDeviceSpec.silence);
-            LOG_INFO("-----------------------------");
-
-            gSoundBufferSamples = gAudioDeviceSpec.samples;
-
-            Reverb_Init(gAudioDeviceSpec.freq);
-
-            SDL_PauseAudio(0);
-
-            SND_InitVolumeTable_4EEF60();
-
-            if (sLoadedSoundsCount_BBC394)
-            {
-                for (int i = 0; i < 256; i++)
-                {
-                    if (sSoundSamples_BBBF38[i])
-                    {
-                        SND_Renew_4EEDD0(sSoundSamples_BBBF38[i]);
-                        SND_LoadSamples_4EF1C0(sSoundSamples_BBBF38[i], 0, sSoundSamples_BBBF38[i]->field_8_pSoundBuffer, sSoundSamples_BBBF38[i]->field_C_buffer_size_bytes / (unsigned __int8)sSoundSamples_BBBF38[i]->field_1D_blockAlign);
-                        if ((i + 1) == sLoadedSoundsCount_BBC394)
-                            break;
-                    }
-                }
-            }
-            sLastNotePlayTime_BBC33C = SYS_GetTicks();
-
-            return 0;
-        }
-    }
-
+    sDSound_BBC344->Init(sampleRate, bitsPerSample, isStereo);
     return 0;
 }
 
@@ -432,3 +369,66 @@ EXPORT char * CC SND_HR_Err_To_String_4EEC70(long)
 }
 
 #endif
+
+void SDLSoundSystem::Init(unsigned int /*sampleRate*/, int /*bitsPerSample*/, int /*isStereo*/)
+{
+    if (!SDL_Init(SDL_INIT_AUDIO))
+    {
+        LOG_ERROR("SDL_Init(SDL_INIT_AUDIO) failed " << SDL_GetError());
+        return;
+    }
+
+    for (int i = 0; i < SDL_GetNumAudioDrivers(); i++)
+    {
+        LOG_INFO("SDL Audio Driver " << i << " " << SDL_GetAudioDriver(i));
+    }
+
+    mAudioDeviceSpec.callback = AE_SDL_Audio_Callback;
+    mAudioDeviceSpec.format = AUDIO_S16;
+    mAudioDeviceSpec.channels = 2;
+    mAudioDeviceSpec.freq = 44100;
+    mAudioDeviceSpec.samples = static_cast<Uint16>(gSoundBufferSamples);
+    mAudioDeviceSpec.userdata = NULL;
+
+    if (SDL_OpenAudio(&mAudioDeviceSpec, NULL) < 0)
+    {
+        LOG_ERROR("Couldn't open SDL audio: " << SDL_GetError());
+        return;
+    }
+
+    LOG_INFO("-----------------------------");
+    LOG_INFO("Audio Device opened, got specs:");
+    LOG_INFO(
+        "Channels: " << mAudioDeviceSpec.channels << " " <<
+        "nFormat: " << mAudioDeviceSpec.format << " " <<
+        "nFreq: " << mAudioDeviceSpec.freq << " " <<
+        "nPadding: " << mAudioDeviceSpec.padding << " " <<
+        "nSamples: " << mAudioDeviceSpec.samples << " " <<
+        "nSize: " << mAudioDeviceSpec.size << " " <<
+        "nSilence: " << mAudioDeviceSpec.silence);
+    LOG_INFO("-----------------------------");
+
+    gSoundBufferSamples = mAudioDeviceSpec.samples;
+
+    Reverb_Init(mAudioDeviceSpec.freq);
+
+    SDL_PauseAudio(0);
+
+    SND_InitVolumeTable_4EEF60();
+
+    if (sLoadedSoundsCount_BBC394)
+    {
+        for (int i = 0; i < 256; i++)
+        {
+            if (sSoundSamples_BBBF38[i])
+            {
+                SND_Renew_4EEDD0(sSoundSamples_BBBF38[i]);
+                SND_LoadSamples_4EF1C0(sSoundSamples_BBBF38[i], 0, sSoundSamples_BBBF38[i]->field_8_pSoundBuffer, sSoundSamples_BBBF38[i]->field_C_buffer_size_bytes / (unsigned __int8)sSoundSamples_BBBF38[i]->field_1D_blockAlign);
+                if ((i + 1) == sLoadedSoundsCount_BBC394)
+                    break;
+            }
+        }
+    }
+
+    sLastNotePlayTime_BBC33C = SYS_GetTicks();
+}

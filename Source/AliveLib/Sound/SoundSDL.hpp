@@ -54,11 +54,12 @@ enum AudioFilterMode
 };
 
 // An SDL implement of used IDirectSoundBuffer API's.
+class SDLSoundSystem;
 class SDLSoundBuffer
 {
 
 public:
-    SDLSoundBuffer();
+    explicit SDLSoundBuffer(int soundSysFreq);
 
     HRESULT SetVolume(int volume);
     HRESULT Play(int reserved, int priority, int flags);
@@ -100,20 +101,25 @@ public:
     AE_SDL_Voice_State mState;
     std::shared_ptr<std::vector<BYTE>> pBuffer;
     
+private:
+    int mSoundSysFreq;
 };
 
 // An SDL implementation of used IDirectSound API's
 class SDLSoundSystem
 {
 public:
+    void Init(unsigned int sampleRate, int bitsPerSample, int isStereo);
+
     HRESULT DuplicateSoundBuffer(TSoundBufferType* pDSBufferOriginal, TSoundBufferType** ppDSBufferDuplicate)
     {
         pDSBufferOriginal->Duplicate(ppDSBufferDuplicate);
         return S_OK;
     }
 
-    HRESULT CreateSoundBuffer(LPCDSBUFFERDESC /*pcDSBufferDesc*/, TSoundBufferType** /*ppDSBuffer*/, void* /*pUnkOuter*/)
+    HRESULT CreateSoundBuffer(LPCDSBUFFERDESC /*pcDSBufferDesc*/, TSoundBufferType** ppDSBuffer, void* /*pUnkOuter*/)
     {
+        *ppDSBuffer = new SDLSoundBuffer(mAudioDeviceSpec.freq);
         return S_OK;
     }
 
@@ -121,6 +127,9 @@ public:
     {
         return S_OK;
     }
+
+private:
+    SDL_AudioSpec mAudioDeviceSpec = {};
 };
 
 signed int CC SND_CreateDS_SDL(unsigned int /*sampleRate*/, int /*bitsPerSample*/, int /*isStereo*/);
